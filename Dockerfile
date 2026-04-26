@@ -5,14 +5,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore dependencies (this is done to leverage Docker cache)
-# COPY HooperHub/*.csproj ./
-RUN dotnet restore HooperHub.slnx
+COPY HooperHub/*.csproj ./
+RUN dotnet restore HooperHub.csproj
 
 # Copy the rest of the source code
 COPY . .
 
 # Build the application
-RUN dotnet publish HooperHub.slnx -c Release -o /app/publish --no-restore
+RUN dotnet publish HooperHub.csproj -c Release -o /app/publish --no-restore
 
 # Stage 2: Create the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
