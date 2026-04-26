@@ -1,0 +1,44 @@
+﻿@using Domain.Entity
+
+<div class="w-full">
+    <h2 class="text-lg font-bold text-gray-300 uppercase tracking-widest mb-2">@Label</h2>
+    
+    <div class="flex flex-col items-center">
+        <span class="text-xs uppercase tracking-widest text-gray-400">Score</span>
+        <input type="number"
+               class="w-24 text-5xl font-extrabold text-center bg-transparent border-b-2 border-gray-600 focus:border-yellow-400 focus:outline-none rounded"
+               value="@Team.Score"
+               @onchange="e => OnScoreChanged(e)" />
+    </div>
+    Count: @Count
+    <div class="overflow-x-auto rounded-xl">
+        <PlayerRow Player="Team.PointGuard" OnPlayerStatChanged="OnPlayerStatChanged" />
+        <PlayerRow Player="Team.ShootingGuard" OnPlayerStatChanged="OnPlayerStatChanged" />
+        <PlayerRow Player="Team.SmallForward" OnPlayerStatChanged="OnPlayerStatChanged" />
+        <PlayerRow Player="Team.PowerForward" OnPlayerStatChanged="OnPlayerStatChanged" />
+        <PlayerRow Player="Team.Center" OnPlayerStatChanged="OnPlayerStatChanged" />
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Team Team { get; set; } = default!;
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnPlayerStatChanged { get; set; }
+
+    private async Task OnScoreChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value))
+        {
+            Team.Score = value;
+            await OnPlayerStatChanged.InvokeAsync(); // reuse same callback to notify Game.razor
+        }
+    }
+}

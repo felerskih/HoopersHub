@@ -1,0 +1,119 @@
+﻿@page "/game"
+@rendermode InteractiveServer
+@using Application.Services
+@using Domain.Entity
+@using Application.Factory
+@using HooperHub.Components.SubComponents.Game
+@inject DefaultsFactory _defaultsFactory
+@inject RatingService _ratingService;
+
+<h1 class="text-2xl font-bold text-gray-200 mb-4">Game</h1>
+
+@if (game is not null)
+{
+    <div class="flex flex-col items-center gap-4 p-6 bg-gray-900 rounded-2xl shadow-lg">
+
+        <div class="flex flex-row items-center justify-center gap-8 align-items-start">
+            <div class="flex flex-col items-center @(game.HomeTeam.Score > game.AwayTeam.Score ? "text-yellow-400" : "text-gray-400")">
+                <span class="text-xs uppercase tracking-widest text-gray-400">Home</span>
+                <input type="number"
+                       class="w-24 text-5xl font-extrabold text-center bg-transparent border-b-2 border-gray-600 focus:border-yellow-400 focus:outline-none rounded"
+                       @bind="game.HomeTeam.Score" />
+            </div>
+
+            <div class="flex flex-col items-center @(game.AwayTeam.Score > game.HomeTeam.Score ? "text-yellow-400" : "text-gray-400")">
+                <span class="text-xs uppercase tracking-widest text-gray-400">Away</span>
+                <input type="number"
+                       class="w-24 text-5xl font-extrabold text-center bg-transparent border-b-2 border-gray-600 focus:border-yellow-400 focus:outline-none rounded"
+                       @bind="game.AwayTeam.Score" />
+            </div>
+        </div>
+
+        <button class="mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-semibold rounded-lg transition-colors"
+                @onclick="ResetGame">
+            ↺ Reset to Defaults
+        </button>
+        <button class="mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-semibold rounded-lg transition-colors"
+                @onclick="UpdateRating">
+            Update Ratings
+        </button>
+
+        <div class="flex gap-6 w-full px-2">
+            @RenderTeam(game.HomeTeam, "Home Team")
+        </div>
+        <div class="flex gap-6 w-full px-2">
+            @RenderTeam(game.AwayTeam, "Away Team")
+        </div>
+
+    </div>
+}
+
+@code {
+    private Domain.Entity.Game? game;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        //Was used to solve issues with updates being made when we didn't want, but may not be an issue on this component?
+        //if (HttpContext.Request.Method == "GET")
+        //{
+            game = _defaultsFactory.CreateGame();
+        //}
+    }
+
+    private void ResetGame()
+    {
+        game = _defaultsFactory.CreateGame();
+    }
+    
+    private RenderFragment RenderTeam(Team team, string label) =>
+    @<div class="w-full">
+        <h2 class="text-lg font-bold text-gray-300 uppercase tracking-widest mb-2">@label</h2>
+        <div class="overflow-x-auto rounded-xl">
+            @RenderPlayerRow("PG", team.PointGuard)
+            @RenderPlayerRow("SG", team.ShootingGuard)
+            @RenderPlayerRow("SF", team.SmallForward)
+            @RenderPlayerRow("PF", team.PowerForward)
+            @RenderPlayerRow("C", team.Center)
+        </div>
+    </div>;
+
+    private RenderFragment RenderPlayerRow(string position, Player player) =>
+        @<div class="hover:bg-gray-800 transition-colors max-w-full">
+            <div class="px-3 py-2 text-left whitespace-nowrap flex flex-row items-center">
+                @player.User.Name
+                Rating: @player.Stats.Rating
+            </div>
+            <div class="px-3 py-2">
+                Points: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Points" />
+                Rebounds: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Rebounds" />
+                Assists: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Assists" />
+                
+            </div>
+            <div class="px-3 py-2">
+                Steals: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Steals" />
+                Blocks: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Blocks" />
+                Turnovers: <input type="number" class="w-10 text-center bg-transparent border-b border-gray-600 focus:border-yellow-400 focus:outline-none text-gray-200 rounded" @bind="player.Stats.Turnovers" />
+            </div>
+        </div>
+    ;
+
+    private void UpdateRating()
+    {
+        UpdateRatingForTeam(game.HomeTeam);
+        UpdateRatingForTeam(game.AwayTeam);
+    }
+
+    private void UpdateRatingForTeam(Team team)
+    {
+        team.Center.Stats.Rating = _ratingService.ComputeRating(team.Center.Stats);
+        team.PointGuard.Stats.Rating = _ratingService.ComputeRating(team.PointGuard.Stats);
+        team.ShootingGuard.Stats.Rating = _ratingService.ComputeRating(team.ShootingGuard.Stats);
+        team.SmallForward.Stats.Rating = _ratingService.ComputeRating(team.SmallForward.Stats);
+        team.PowerForward.Stats.Rating = _ratingService.ComputeRating(team.PowerForward.Stats);
+
+        team.Score = team.Center.Stats.Points + team.PointGuard.Stats.Points + team.ShootingGuard.Stats.Points + team.SmallForward.Stats.Points + team.PowerForward.Stats.Points;
+    }
+}

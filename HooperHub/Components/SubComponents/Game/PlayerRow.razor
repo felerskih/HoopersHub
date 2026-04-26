@@ -1,0 +1,47 @@
+﻿@using Domain.Entity
+
+<div class="hover:bg-gray-800 transition-colors max-w-full">
+    <div class="px-3 py-2 text-left whitespace-nowrap flex flex-row items-center">
+        @Player.User.Name
+        Rating: @Player.Stats.Rating
+    </div>
+    <div class="px-3 py-2">
+        Points: <input type="number" class="w-10 ..."
+                       value="@Player.Stats.Points"
+                       @onchange="e => OnStatChanged(e, v => Player.Stats.Points = v)" />
+        Rebounds: <input type="number" class="w-10 ..."
+                         value="@Player.Stats.Rebounds"
+                         @onchange="e => OnStatChanged(e, v => Player.Stats.Rebounds = v)" />
+        Assists: <input type="number" class="w-10 ..."
+                        value="@Player.Stats.Assists"
+                        @onchange="e => OnStatChanged(e, v => Player.Stats.Assists = v)" />
+    </div>
+    <div class="px-3 py-2">
+        Steals: <input type="number" class="w-10 ..."
+                       value="@Player.Stats.Steals"
+                       @onchange="e => OnStatChanged(e, v => Player.Stats.Steals = v)" />
+        Blocks: <input type="number" class="w-10 ..."
+                       value="@Player.Stats.Blocks"
+                       @onchange="e => OnStatChanged(e, v => Player.Stats.Blocks = v)" />
+        Turnovers: <input type="number" class="w-10 ..."
+                          value="@Player.Stats.Turnovers"
+                          @onchange="e => OnStatChanged(e, v => Player.Stats.Turnovers = v)" />
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Player Player { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnPlayerStatChanged { get; set; }
+
+    private async Task OnStatChanged(ChangeEventArgs e, Action<int> setter)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value))
+        {
+            setter(value);
+            await OnPlayerStatChanged.InvokeAsync();
+        }
+    }
+}

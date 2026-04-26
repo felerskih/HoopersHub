@@ -1,0 +1,81 @@
+﻿@page "/game2"
+@rendermode InteractiveServer
+@using Application.Services
+@using Application.Factory
+@using Domain.Entity
+@using HooperHub.Components.SubComponents.Game
+@inject DefaultsFactory _defaultsFactory
+@inject RatingService _ratingService
+
+<h1 class="text-2xl font-bold text-gray-200 mb-4">Game</h1>
+
+@if (game is not null)
+{
+    <div class="flex flex-col items-center gap-4 p-6 bg-gray-900 rounded-2xl shadow-lg">
+
+        <button class="mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-semibold rounded-lg transition-colors"
+                @onclick="ResetGame">
+            ↺ Reset to Defaults
+        </button>
+        <button class="mt-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-semibold rounded-lg transition-colors"
+                @onclick="UpdateRatings">
+            Update Ratings
+        </button>
+
+        <button @onclick="Increment">Increment</button>
+        Count: @_count
+        <TeamDisplay Team="@game.HomeTeam" Count="@_count" Label="Home Team" OnPlayerStatChanged="OnStatChanged" />
+        <TeamDisplay Team="@game.AwayTeam" Label="Away Team" OnPlayerStatChanged="OnStatChanged" />
+
+    </div>
+}
+
+@code {
+    private Domain.Entity.Game? game; //fixthis when rename razor component
+    private int _count = 0;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        //if (HttpContext != null && HttpContext.Request.Method == "GET")
+        //{
+            game = _defaultsFactory.CreateGame();
+        //}
+    }
+
+    private void ResetGame()
+    {
+        game = _defaultsFactory.CreateGame();
+        StateHasChanged();
+    }
+
+    private void OnStatChanged()
+    {
+        // Slot to react to any stat change — e.g. auto-update ratings, dirty tracking, etc.
+        StateHasChanged();
+    }
+
+    private void UpdateRatings()
+    {
+        UpdateRatingForTeam(game!.HomeTeam);
+        UpdateRatingForTeam(game.AwayTeam);
+        StateHasChanged();
+    }
+
+    private void UpdateRatingForTeam(Team team)
+    {
+        team.Center.Stats.Rating = _ratingService.ComputeRating(team.Center.Stats);
+        team.PointGuard.Stats.Rating = _ratingService.ComputeRating(team.PointGuard.Stats);
+        team.ShootingGuard.Stats.Rating = _ratingService.ComputeRating(team.ShootingGuard.Stats);
+        team.SmallForward.Stats.Rating = _ratingService.ComputeRating(team.SmallForward.Stats);
+        team.PowerForward.Stats.Rating = _ratingService.ComputeRating(team.PowerForward.Stats);
+    }
+
+    private void Increment()
+    {
+        _count++;
+        // Blazor re-renders automatically, child receives new Count
+    }
+}
